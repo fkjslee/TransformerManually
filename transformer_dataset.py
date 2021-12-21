@@ -1,22 +1,20 @@
+import torch
 from torch.utils.data import Dataset
 from vocabular import Vocabular
-from utils import split_sentence
-from models import config
 
 
 class TransTrainDataset(Dataset):
-    def __init__(self, loaded_dataset, src_vocab, dst_vocab, config, mode):
+    def __init__(self, loaded_dataset, src_vocab, dst_vocab, mode, config):
         self.data = loaded_dataset[mode]
         self.src_vocab = src_vocab
         self.dst_vocab = dst_vocab
         self.config = config
 
     def __len__(self):
-        return len(self.data)
+        return 138
 
-    def __getitem__(self, item):
+    def __getitem__(self, idx):
         """
-        :param item: index
         :return: sentence -> word -> one-hot-encoding
         """
 
@@ -28,11 +26,13 @@ class TransTrainDataset(Dataset):
             return word_list
 
 
+        src_sentence = list(self.data[idx]['translation'].values())[0]
         src_ont_hot = []
-        for word in self.src_sentences[item].strip().split(' '):
-            src_ont_hot.append(self.src_vocab.stoi[word])
+        for word in src_sentence.strip().split(' '):
+            src_ont_hot.append(self.src_vocab.stoi.get(word, self.src_vocab.stoi['UNK']))
 
+        dst_sentence = list(self.data[idx]['translation'].values())[1]
         dst_one_hot = []
-        for word in self.dst_sentences[item].strip().split(' '):
-            dst_one_hot.append(self.dst_vocab.stoi[word])
-        return pad(src_ont_hot, self.config), pad(dst_one_hot, self.config)
+        for word in dst_sentence.strip().split(' '):
+            dst_one_hot.append(self.dst_vocab.stoi.get(word, self.dst_vocab.stoi['UNK']))
+        return torch.tensor(pad(src_ont_hot, self.config)), torch.tensor(pad(dst_one_hot, self.config))

@@ -1,3 +1,5 @@
-x = [1, 2, 3]
-x.reverse()
-print(x)
+import torch
+
+
+en2de = torch.hub.load('pytorch/fairseq', 'transformer.wmt19.en-de.single_model')
+en2de.translate('Hello world', beam=5)

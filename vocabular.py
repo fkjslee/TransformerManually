@@ -1,8 +1,7 @@
 import os
 import collections
 import datasets
-from models import config
-from utils import split_sentence
+import tqdm
 
 
 class Vocabular:
@@ -27,19 +26,22 @@ def build_vocab_cache(loaded_dataset, over_write=True):
             os.makedirs(vocab_root_path)
         src_word = collections.defaultdict(lambda: 0)
         dst_word = collections.defaultdict(lambda: 0)
-        for mode in loaded_dataset.keys():
-            for translation in loaded_dataset[mode]:
-                for word in split_sentence(translation['translation']['de'], config):
-                    src_word[word] += 1
-                for word in split_sentence(translation['translation']['en'], config):
-                    dst_word[word] += 1
+        for i, translation in enumerate(tqdm.tqdm(loaded_dataset['train'], desc="Build {}".format('train'))):
+            for word in translation['translation']['de'].strip().split(' '):
+                src_word[word] += 1
+            for word in translation['translation']['en'].strip().split(' '):
+                dst_word[word] += 1
         with open(os.path.join(vocab_root_path, "de.txt"), "w", encoding="utf-8") as f_src, open(os.path.join(vocab_root_path, "en.txt"), "w", encoding="utf-8") as f_dst:
-            for key in ['PAD', 'UNK'] + config.punctuation:
+            for key in ['PAD', 'UNK']:
                 f_src.write('{} {}\n'.format(key, 0))
                 f_dst.write('{} {}\n'.format(key, 0))
             for (key, val) in sorted(src_word.items(), key=lambda item: item[1], reverse=True):
+                if val <= 5:
+                    break
                 f_src.write('{} {}\n'.format(key, val))
             for (key, val) in sorted(dst_word.items(), key=lambda item: item[1], reverse=True):
+                if val <= 5:
+                    break
                 f_dst.write('{} {}\n'.format(key, val))
 
 
